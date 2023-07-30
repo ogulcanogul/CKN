@@ -128,7 +128,7 @@ if te is not None:
 def build_ffn(
     d_model: int,
     expansion_ratio: int,
-    max_step_size: int,
+    max_step_size: int = 1000,
     fc_type: str = 'torch',
     device: Optional[str] = None,
     decay_weight_ma: float = 0.99,
