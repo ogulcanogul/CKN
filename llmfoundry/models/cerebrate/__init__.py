@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from llmfoundry.models.cerebrate.configuration_cerebrate import CerebrateConfig
-from llmfoundry.models.cerebrate.modeling_mpt import (ComposerCerebrateCausalLM,
+from llmfoundry.models.cerebrate.modeling_cerebrate import (ComposerCerebrateCausalLM,
                                                 CerebrateForCausalLM, CerebrateModel,
                                                 CerebratePreTrainedModel)
 
