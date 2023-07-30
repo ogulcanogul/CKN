@@ -73,7 +73,7 @@ class CerebratePreTrainedModel(PreTrainedModel):
 
 class CerebrateModel(CerebratePreTrainedModel):
 
-    def __init__(self, config: Cere):
+    def __init__(self, config: CerebrateConfig):
         config._validate_config()
         super().__init__(config)
 
