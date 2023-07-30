@@ -121,10 +121,6 @@ FFN_CLASS_REGISTRY = {
     'cerebrate_mlp': CerebrateMLP,
 }
 
-if te is not None:
-    te.LayerNormMLP._has_norm = True
-    FFN_CLASS_REGISTRY['te_ln_mlp'] = te.LayerNormMLP
-
 
 def build_ffn(
     d_model: int,
@@ -137,7 +133,7 @@ def build_ffn(
     neuron_keep_steps: int = 2000,
     **kwargs,
 ):
-    ffn_type = kwargs.pop('ffn_type')
+    ffn_type = 'cerebrate_mlp'
     if ffn_type == 'mptmlp':
         if kwargs is not None and len(kwargs) > 0:
             raise ValueError(
