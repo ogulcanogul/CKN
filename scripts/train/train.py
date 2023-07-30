@@ -60,36 +60,6 @@ def validate_config(cfg):
                 'ICL evaluation does not currently support Encoder-Decoder models, such as "hf_t5".'
             )
 
-    if (cfg.model.get('fc_type', 'torch') != 'te' and 'te' not in cfg.model.get(
-            'ffn_config', {}).get('ffn_type', 'mptmlp') and
-            'fp8' in cfg.precision):
-        warnings.warn(
-            "fp8 only supported for te.Linear layers. Either set `cfg.model.fc_typ='te'` or "
-            "`cfg.model.ffn_config.ffn_type='te_ln_mlp'` to enable layers using fp8 precision."
-        )
-
-    if (cfg.model.get('fc_type', 'torch') == 'te' or 'te' not in cfg.model.get(
-            'ffn_config', {}).get('ffn_type', 'mptmlp')):
-        fsdp_config = cfg.get('fsdp_config', None)
-        act_ckpt = fsdp_config.get('activation_checkpointing', False)
-        act_ckpt_reentrant = fsdp_config.get(
-            'activation_checkpointing_reentrant', True)
-        if fsdp_config is not None and act_ckpt == True and act_ckpt_reentrant == False:
-            warnings.warn(
-                '`te.Linear` layers do not support activation_checkpointing with '
-                '`activation_checkpointing_reentrant = False`. '
-                'Setting cfg.fsdp_config.activation_checkpointing_reentrant=True.'
-            )
-            cfg.fsdp_config.activation_checkpointing_reentrant = True
-
-    if 'te' in cfg.model.get('ffn_config', {}).get('ffn_type', 'mptmlp'):
-        warnings.warn(
-            '`te.LayerNormMLP` requires has issues with torch._dynamo. '
-            'Setting `torch._dynamo.config.suppress_errors = True` and falling back to eager.'
-        )
-        torch._dynamo.config.suppress_errors = True
-
-
 def build_composer_model(model_cfg, tokenizer):
     warnings.filterwarnings(
         action='ignore',
