@@ -11,6 +11,7 @@ import torch.nn as nn
 from llmfoundry.models.layers.attention import ATTN_CLASS_REGISTRY
 from llmfoundry.models.layers.fc import FC_CLASS_REGISTRY
 from llmfoundry.models.layers.norm import NORM_CLASS_REGISTRY
+import math
 
 try:
     import transformer_engine.pytorch as te
