@@ -165,4 +165,5 @@ def build_ffn(
             max_step_size=max_step_size,
         )
 
-    raise ValueError(f'{ffn_type=} not recognized.')
+    else:
+        raise ValueError(f'{ffn_type=} not recognized.')
