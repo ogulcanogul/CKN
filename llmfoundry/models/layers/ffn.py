@@ -47,9 +47,77 @@ class MPTMLP(nn.Module):
     def forward(self, x):
         return self.down_proj(self.act(self.up_proj(x)))
 
+class CerebrateMLP(nn.Module):
+
+    def __init__(
+        self,
+        d_model: int,
+        expansion_ratio: int,
+        max_step_size:int,
+        fc_type: str = 'torch',
+        device: Optional[str] = None,
+        decay_weight_ma: float = 0.99,
+        neuron_keep_probability: float = 1.00,
+        neuron_keep_steps: int = 2000,
+    ):
+        super().__init__()
+        fc_kwargs = {}
+        if fc_type != 'te':
+            fc_kwargs['device'] = device
+        self.up_proj = FC_CLASS_REGISTRY[fc_type](
+            d_model,
+            expansion_ratio * d_model,
+            **fc_kwargs,
+        )
+        self.act = nn.GELU(approximate='none')
+        self.down_proj = FC_CLASS_REGISTRY[fc_type](
+            expansion_ratio * d_model,
+            d_model,
+            **fc_kwargs,
+        )
+        self.down_proj._is_residual = True  # type: ignore
+        self.iteration = 0
+        self.free_neuron_p = 1 / (expansion_ratio * d_model)
+        neuron_keep_probability_func = lambda step: \
+            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size)
+        p_tohold = 1 - neuron_keep_probability_func(neuron_keep_steps)
+        self.neuron_keep_probability_func = lambda step: \
+            min(1, p_tohold - (p_tohold * max(0,
+            (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
+            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
+        self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model), requires_grad=False)
+        self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model), requires_grad=False)
+        self.decay_weight_ma = decay_weight_ma
+
+    def forward(self, x):
+        x = self.up_proj(x)
+        x = self.act(x)
+        mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
+        neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
+        self.neuron_activation = torch.nn.Parameter(neuron_activation, requires_grad=False)
+        keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
+        neuron_available_p = torch.sum(self.neuron_mask) / self.neuron_mask.size(dim=0)
+        if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
+            num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
+            num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
+            num_neurons_to_kill = num_neurons_to_kill.astype('int')
+            if num_neurons_to_kill > 0:
+                neuron_activations_active = torch.mul(self.neuron_activation, self.neuron_mask)
+                maximum_value_temp = torch.max(neuron_activations_active) + 1
+                neuron_activations_active[neuron_activations_active==0] = maximum_value_temp
+                values, indices = torch.topk(neuron_activations_active, num_neurons_to_kill, largest=False)
+                self.neuron_mask[indices] = 0
+        x = torch.mul(x, self.neuron_mask.view(1, 1, -1))
+
+        x = self.down_proj(x)
+
+        self.iteration += 1
+
+        return x
 
 FFN_CLASS_REGISTRY = {
     'mptmlp': MPTMLP,
+    'cerebrate_mlp': CerebrateMLP,
 }
 
 if te is not None:
@@ -60,8 +128,12 @@ if te is not None:
 def build_ffn(
     d_model: int,
     expansion_ratio: int,
+    max_step_size: int,
     fc_type: str = 'torch',
     device: Optional[str] = None,
+    decay_weight_ma: float = 0.99,
+    neuron_keep_probability: float = 1.00,
+    neuron_keep_steps: int = 2000,
     **kwargs,
 ):
     ffn_type = kwargs.pop('ffn_type')
@@ -80,6 +152,17 @@ def build_ffn(
             hidden_size=d_model,
             ffn_hidden_size=d_model * expansion_ratio,
             **kwargs,
+        )
+    elif ffn_type == 'cerebrate_mlp':
+        return CerebrateMLP(
+            d_model=d_model,
+            expansion_ratio=expansion_ratio,
+            fc_type=fc_type,
+            device=device,
+            decay_weight_ma=decay_weight_ma,
+            neuron_keep_probability=neuron_keep_probability,
+            neuron_keep_steps=neuron_keep_steps,
+            max_step_size=max_step_size,
         )
 
     raise ValueError(f'{ffn_type=} not recognized.')
