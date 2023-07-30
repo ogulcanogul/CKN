@@ -22,7 +22,7 @@ attn_config_defaults: Dict = {
 }
 
 ffn_config_defaults: Dict = {
-    'ffn_type': 'mptmlp',
+    'ffn_type': 'cerebrate_mlp',
 }
 
 init_config_defaults: Dict = {
