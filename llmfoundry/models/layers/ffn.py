@@ -11,7 +11,7 @@ import torch.nn as nn
 from llmfoundry.models.layers.attention import ATTN_CLASS_REGISTRY
 from llmfoundry.models.layers.fc import FC_CLASS_REGISTRY
 from llmfoundry.models.layers.norm import NORM_CLASS_REGISTRY
-from composer.utils.dist import get_local_rank
+from composer.utils import dist
 import math
 
 try:
@@ -88,9 +88,8 @@ class CerebrateMLP(nn.Module):
             min(1, p_tohold - (p_tohold * max(0,
             (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
             neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
-        local_rank = get_local_rank()
-        self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=local_rank)
-        self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=local_rank)
+        self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=dist.get_global_rank())
+        self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=dist.get_global_rank())
         self.decay_weight_ma = decay_weight_ma
 
     def forward(self, x):
@@ -100,7 +99,13 @@ class CerebrateMLP(nn.Module):
         #self.neuron_activation = self.neuron_activation.to(x.device)
         #self.neuron_activation = self.neuron_activation.to(mean_activations.device)
         #neuron_mask = self.neuron_mask.to(x.device)
-        self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
+        #neuron_activation = dist.all_gather(self.neuron_activation)
+
+        #self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
+        self.neuron_activation *= self.decay_weight_ma
+        self.neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
+
+
         #self.neuron_activation = self.neuron_activation.to('cpu')
         #self.neuron_activation = self.neuron_activation.to('meta')
         keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
