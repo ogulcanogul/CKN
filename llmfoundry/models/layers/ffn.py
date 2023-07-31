@@ -108,6 +108,7 @@ class CerebrateMLP(nn.Module):
             num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
             num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
             num_neurons_to_kill = num_neurons_to_kill.astype('int')
+            num_neurons_to_kill = num_neurons_to_kill[0]
             if num_neurons_to_kill > 0:
                 neuron_activations_active = torch.mul(self.neuron_activation, self.neuron_mask)
                 maximum_value_temp = torch.max(neuron_activations_active) + 1
