@@ -78,18 +78,18 @@ class CerebrateMLP(nn.Module):
         )
         self.down_proj._is_residual = True  # type: ignore
 
-        # self.iteration = 0
-        # self.free_neuron_p = 1 / (expansion_ratio * d_model)
-        # neuron_keep_probability_func = lambda step: \
-        #     neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size)
-        # p_tohold = 1 - neuron_keep_probability_func(neuron_keep_steps)
-        # self.neuron_keep_probability_func = lambda step: \
-        #     min(1, p_tohold - (p_tohold * max(0,
-        #     (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
-        #     neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
-        # self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
-        # self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
-        # self.decay_weight_ma = decay_weight_ma
+        self.iteration = 0
+        self.free_neuron_p = 1 / (expansion_ratio * d_model)
+        neuron_keep_probability_func = lambda step: \
+            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size)
+        p_tohold = 1 - neuron_keep_probability_func(neuron_keep_steps)
+        self.neuron_keep_probability_func = lambda step: \
+            min(1, p_tohold - (p_tohold * max(0,
+            (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
+            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
+        #self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
+        #self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
+        self.decay_weight_ma = decay_weight_ma
 
     def forward(self, x):
         x = self.up_proj(x)
