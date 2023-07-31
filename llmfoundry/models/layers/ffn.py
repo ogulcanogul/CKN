@@ -110,7 +110,6 @@ class CerebrateMLP(nn.Module):
         neuron_mask = self.neuron_mask.to(x.device)
         self.neuron_activation = neuron_activation.detach().cpu()
 
-
         #self.neuron_activation = self.neuron_activation.to('cpu')
         #self.neuron_activation = self.neuron_activation.to('meta')
         keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
