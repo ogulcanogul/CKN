@@ -134,7 +134,6 @@ class CerebrateMLP(nn.Module):
 
         torch.cuda.empty_cache()
 
-
         x = self.down_proj(x)
 
         self.iteration += 1
