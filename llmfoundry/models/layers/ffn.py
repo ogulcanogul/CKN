@@ -95,7 +95,7 @@ class CerebrateMLP(nn.Module):
         x = self.up_proj(x)
         x = self.act(x)
         mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
-        mean_activations.to('meta')
+        mean_activations = mean_activations.to('meta')
         #self.neuron_activation = self.neuron_activation.to(mean_activations.device)
         self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
         #self.neuron_activation = self.neuron_activation.to('meta')
