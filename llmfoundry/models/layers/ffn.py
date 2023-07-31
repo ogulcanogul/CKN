@@ -94,8 +94,8 @@ class CerebrateMLP(nn.Module):
         x = self.up_proj(x)
         x = self.act(x)
         mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
-        neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
-        self.neuron_activation = torch.nn.Parameter(neuron_activation, requires_grad=False)
+        #neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
+        #self.neuron_activation = torch.nn.Parameter(neuron_activation, requires_grad=False)
         keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
         neuron_available_p = torch.sum(self.neuron_mask) / self.neuron_mask.size(dim=0)
         if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
