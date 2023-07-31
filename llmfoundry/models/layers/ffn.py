@@ -87,16 +87,15 @@ class CerebrateMLP(nn.Module):
             min(1, p_tohold - (p_tohold * max(0,
             (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
             neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
-        # self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
-        # self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
+        self.neuron_activation = torch.zeros(expansion_ratio * d_model,  **fc_kwargs)
+        self.neuron_mask = torch.ones(expansion_ratio * d_model,  **fc_kwargs)
         self.decay_weight_ma = decay_weight_ma
 
     def forward(self, x):
         x = self.up_proj(x)
         x = self.act(x)
         mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
-        neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
-        self.neuron_activation = torch.nn.Parameter(neuron_activation, requires_grad=False)
+        self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
         keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
         neuron_available_p = torch.sum(self.neuron_mask) / self.neuron_mask.size(dim=0)
         if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
