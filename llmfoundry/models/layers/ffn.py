@@ -114,7 +114,8 @@ class CerebrateMLP(nn.Module):
                 neuron_activations_active[neuron_activations_active==0] = maximum_value_temp
                 values, indices = torch.topk(neuron_activations_active, num_neurons_to_kill, largest=False)
                 self.neuron_mask[indices] = 0
-        x = torch.mul(x, self.neuron_mask.view(1, 1, -1))
+                neuron_mask[indices] = 0
+        x = torch.mul(x, neuron_mask.view(1, 1, -1))
 
         x = self.down_proj(x)
 
