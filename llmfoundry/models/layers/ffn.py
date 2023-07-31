@@ -11,6 +11,7 @@ import torch.nn as nn
 from llmfoundry.models.layers.attention import ATTN_CLASS_REGISTRY
 from llmfoundry.models.layers.fc import FC_CLASS_REGISTRY
 from llmfoundry.models.layers.norm import NORM_CLASS_REGISTRY
+from composer.utils.dist import get_local_rank
 import math
 
 try:
@@ -87,8 +88,9 @@ class CerebrateMLP(nn.Module):
             min(1, p_tohold - (p_tohold * max(0,
             (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
             neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
-        self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=self.rank)
-        self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=self.rank)
+        local_rank = get_local_rank()
+        self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=local_rank)
+        self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=local_rank)
         self.decay_weight_ma = decay_weight_ma
 
     def forward(self, x):
