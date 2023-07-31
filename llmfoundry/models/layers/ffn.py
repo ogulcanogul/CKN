@@ -130,6 +130,7 @@ class CerebrateMLP(nn.Module):
                 del neuron_activations_active, maximum_value_temp, neuron_activations_active, values, indices
             del num_neurons_to_kill
 
+
         x = torch.mul(x, neuron_mask.view(1, 1, -1))
         del neuron_activation, neuron_available_p, keep_neuron_p, mean_activations
         torch.cuda.empty_cache()
