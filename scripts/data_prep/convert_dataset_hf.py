@@ -133,11 +133,6 @@ class ConcatTokensDataset(IterableDataset):
                     'tokens': np.asarray(concat_sample).tobytes()
                 }
 
-
-os.environ['AWS_ACCESS_KEY_ID'] = 'AKIAQ55CBWCG7L6FZ6HD'
-os.environ['AWS_SECRET_ACCESS_KEY'] = 'joQrBrYG4hsL6GJHJljQe/aOg43cQYHDSjeOA0K6'
-
-
 class ConcatMode(Enum):
     NO_CONCAT = 'NO_CONCAT'
     CONCAT_TOKENS = 'CONCAT_TOKENS'
@@ -421,6 +416,7 @@ def generate_samples(
 
 def main(args: Namespace) -> None:
     """Main: create C4/pile streaming dataset.
+
 
     Args:
         args (Namespace): Commandline arguments.
