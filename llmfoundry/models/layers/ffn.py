@@ -87,8 +87,8 @@ class CerebrateMLP(nn.Module):
             min(1, p_tohold - (p_tohold * max(0,
             (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
             neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
-        self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
-        self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
+        # self.neuron_activation = torch.nn.Parameter(torch.zeros(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
+        # self.neuron_mask = torch.nn.Parameter(torch.ones(expansion_ratio * d_model,  **fc_kwargs), requires_grad=False)
         self.decay_weight_ma = decay_weight_ma
 
     def forward(self, x):
