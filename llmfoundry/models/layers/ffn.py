@@ -96,7 +96,7 @@ class CerebrateMLP(nn.Module):
         x = self.up_proj(x)
         x = self.act(x)
 
-        if self.training:
+        if self.training == True:
             mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
             #self.neuron_activation = self.neuron_activation.to(x.device)
             #self.neuron_activation = self.neuron_activation.to(mean_activations.device)
