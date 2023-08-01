@@ -96,6 +96,7 @@ class CerebrateMLP(nn.Module):
         x = self.up_proj(x)
         x = self.act(x)
 
+        neuron_mask = self.neuron_mask.to(x.device)
         if self.training:
             mean_activations = torch.mean(torch.mean(torch.abs(x), 0), 0)
             #self.neuron_activation = self.neuron_activation.to(x.device)
@@ -109,7 +110,7 @@ class CerebrateMLP(nn.Module):
             neuron_activation *= self.decay_weight_ma
             neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
 
-            neuron_mask = self.neuron_mask.to(x.device)
+
             self.neuron_activation = neuron_activation.detach().cpu()
 
             #self.neuron_activation = self.neuron_activation.to('cpu')
@@ -133,12 +134,12 @@ class CerebrateMLP(nn.Module):
                     del neuron_activations_active, maximum_value_temp, values, indices
                 del num_neurons_to_kill
 
-            x = torch.mul(x, neuron_mask.view(1, 1, -1))
-            del neuron_activation, neuron_mask, neuron_available_p, keep_neuron_p, mean_activations
+            del neuron_activation,  neuron_available_p, keep_neuron_p, mean_activations
             torch.cuda.empty_cache()
 
             self.iteration += 1
-
+        x = torch.mul(x, neuron_mask.view(1, 1, -1))
+        del neuron_mask
         x = self.down_proj(x)
 
         return x
