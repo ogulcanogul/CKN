@@ -80,6 +80,7 @@ class CerebrateMLP(nn.Module):
         self.down_proj._is_residual = True  # type: ignore
 
         self.iteration = 0
+        self.number_of_neurons = expansion_ratio * d_model
         self.free_neuron_p = 1 / (expansion_ratio * d_model)
         neuron_keep_probability_func = lambda step: \
             neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size)
@@ -109,6 +110,23 @@ class CerebrateMLP(nn.Module):
             #self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
             neuron_activation *= self.decay_weight_ma
             neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
+
+            if self.iteration % 100 == 0:
+                neuron_activation_sorted, indices = torch.sort(neuron_activation)
+                neuron_activation_max = neuron_activation_sorted[-1]
+                neuron_activation_90 = neuron_activation_sorted[self.number_of_neurons*9//10]
+                neuron_activation_75 = neuron_activation_sorted[self.number_of_neurons*3//4]
+                neuron_activation_median = neuron_activation_sorted[self.number_of_neurons//2]
+                neuron_activation_25 = neuron_activation_sorted[self.number_of_neurons//4]
+                neuron_activation_10 = neuron_activation_sorted[self.number_of_neurons//10]
+                neuron_activation_min = neuron_activation_sorted[0]
+                print(f'Neuron activation values in iteration {self.iteration}:\nmin: {neuron_activation_min}\n'
+                      f'10_p: {neuron_activation_10}\n'
+                      f'25_p: {neuron_activation_25}\n'
+                      f'median: {neuron_activation_median}\n'
+                      f'75_p: {neuron_activation_75}\n'
+                      f'90_p: {neuron_activation_90}\n'
+                      f'max: {neuron_activation_max}')
 
 
             self.neuron_activation = neuron_activation.detach().cpu()
