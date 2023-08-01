@@ -128,9 +128,9 @@ class CerebrateMLP(nn.Module):
                 maximum_value_temp = torch.max(neuron_activations_active) + 1
                 neuron_activations_active[neuron_activations_active==0] = maximum_value_temp
                 values, indices = torch.topk(neuron_activations_active, num_neurons_to_kill, largest=False)
-                if self.training:
-                    self.neuron_mask[indices] = 0
-                    neuron_mask[indices] = 0
+                #if self.training:
+                self.neuron_mask[indices] = 0
+                neuron_mask[indices] = 0
                 del neuron_activations_active, maximum_value_temp, values, indices
             del num_neurons_to_kill
 
@@ -138,8 +138,8 @@ class CerebrateMLP(nn.Module):
         del neuron_activation, neuron_mask, neuron_available_p, keep_neuron_p, mean_activations
         torch.cuda.empty_cache()
 
-        if self.training:
-            self.iteration += 1
+        #if self.training:
+        self.iteration += 1
 
         x = self.down_proj(x)
 
