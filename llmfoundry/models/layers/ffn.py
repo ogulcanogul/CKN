@@ -170,7 +170,7 @@ class CerebrateMLP(nn.Module):
             torch.cuda.empty_cache()
 
             self.iteration += 1
-        #x = torch.mul(x, neuron_mask.view(1, 1, -1))
+        x = torch.mul(x, neuron_mask.view(1, 1, -1))
         del neuron_mask
         x = self.down_proj(x)
 
