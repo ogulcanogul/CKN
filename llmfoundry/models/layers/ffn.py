@@ -80,6 +80,8 @@ class CerebrateMLP(nn.Module):
         self.down_proj._is_residual = True  # type: ignore
 
         self.iteration = 0
+        self.new_method = True
+
         self.number_of_neurons = expansion_ratio * d_model
         self.free_neuron_p = 1 / (expansion_ratio * d_model)
         neuron_keep_probability_func = lambda step: \
@@ -109,67 +111,83 @@ class CerebrateMLP(nn.Module):
             #neuron_mask = self.neuron_mask.to(x.device)
             #neuron_activation = dist.all_gather(self.neuron_activation)
 
-            neuron_activation = self.neuron_activation.to(x.device)
-
-            #self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
-            neuron_activation *= self.decay_weight_ma
-            neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
-
-            if (self.iteration % 100 == 0) and self.debug:
-                neuron_activation_sorted, indices = torch.sort(neuron_activation)
-                neuron_activation_max = neuron_activation_sorted[-1]
-                neuron_activation_90 = neuron_activation_sorted[self.number_of_neurons*9//10]
-                neuron_activation_75 = neuron_activation_sorted[self.number_of_neurons*3//4]
-                neuron_activation_median = neuron_activation_sorted[self.number_of_neurons//2]
-                neuron_activation_25 = neuron_activation_sorted[self.number_of_neurons//4]
-                neuron_activation_10 = neuron_activation_sorted[self.number_of_neurons//10]
-                neuron_activation_min = neuron_activation_sorted[0]
-                print(f'Neuron activation values in iteration {self.iteration}:\nmin: {neuron_activation_min}\n'
-                      f'10_p: {neuron_activation_10}\n'
-                      f'25_p: {neuron_activation_25}\n'
-                      f'median: {neuron_activation_median}\n'
-                      f'75_p: {neuron_activation_75}\n'
-                      f'90_p: {neuron_activation_90}\n'
-                      f'max: {neuron_activation_max}')
-
-            self.neuron_activation = neuron_activation.detach().cpu()
-            #self.neuron_activation = self.neuron_activation.to('cpu')
-            #self.neuron_activation = self.neuron_activation.to('meta')
-            keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
-            neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
-
-            if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
-                if self.debug:
-                    print('############################')
-                    print(f'iteration: {self.iteration}')
-                    print(f'keep_neuron_p: {keep_neuron_p}')
-                    print(f'neuron_available_p: {neuron_available_p}')
-                    print(f'self.free_neuron_p: {self.free_neuron_p}')
-                    print(f'neuron_keep_probability: {self.neuron_keep_probability}')
-                    print(f'neuron_keep_steps: {self.neuron_keep_steps}')
-                    print(f'max_step_size: {self.max_step_size}')
-                    print('###################################################################')
-                    print('Somethinggg wrongg')
-                    print('###################################################################')
-                num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
-                num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
-                num_neurons_to_kill = num_neurons_to_kill.astype('int')
-                num_neurons_to_kill = int(num_neurons_to_kill)
-                if num_neurons_to_kill > 0:
+            if self.new_method:
+                neuron_activation = self.neuron_activation.to(x.device)
+                neuron_activation *= self.decay_weight_ma
+                neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
+                self.neuron_activation = neuron_activation.detach().cpu()
+                if self.iteration > self.neuron_keep_steps:
                     neuron_activations_active = torch.mul(neuron_activation, neuron_mask)
-                    neuron_activations_active = neuron_activations_active.detach().cpu()
-                    maximum_value_temp = torch.max(neuron_activations_active) + 1
-                    neuron_activations_active[neuron_activations_active==0] = maximum_value_temp
-                    values, indices = torch.topk(neuron_activations_active, num_neurons_to_kill, largest=False)
-                    self.neuron_mask[indices] = 0
-                    neuron_mask[indices] = 0
-                    del neuron_activations_active, maximum_value_temp, values, indices
-                del num_neurons_to_kill
+                    neuron_mask[neuron_activations_active<0.05] = 0
+                    self.neuron_mask[neuron_activations_active<0.05] = 0
 
-            del neuron_activation,  neuron_available_p, keep_neuron_p, mean_activations
-            torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
 
-            self.iteration += 1
+                self.iteration += 1
+                del neuron_activations_active, neuron_activation
+
+            else:
+                neuron_activation = self.neuron_activation.to(x.device)
+
+                #self.neuron_activation = (self.decay_weight_ma  * self.neuron_activation) + ((1-self.decay_weight_ma) * mean_activations)
+                neuron_activation *= self.decay_weight_ma
+                neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
+
+                if (self.iteration % 100 == 0) and self.debug:
+                    neuron_activation_sorted, indices = torch.sort(neuron_activation)
+                    neuron_activation_max = neuron_activation_sorted[-1]
+                    neuron_activation_90 = neuron_activation_sorted[self.number_of_neurons*9//10]
+                    neuron_activation_75 = neuron_activation_sorted[self.number_of_neurons*3//4]
+                    neuron_activation_median = neuron_activation_sorted[self.number_of_neurons//2]
+                    neuron_activation_25 = neuron_activation_sorted[self.number_of_neurons//4]
+                    neuron_activation_10 = neuron_activation_sorted[self.number_of_neurons//10]
+                    neuron_activation_min = neuron_activation_sorted[0]
+                    print(f'Neuron activation values in iteration {self.iteration}:\nmin: {neuron_activation_min}\n'
+                          f'10_p: {neuron_activation_10}\n'
+                          f'25_p: {neuron_activation_25}\n'
+                          f'median: {neuron_activation_median}\n'
+                          f'75_p: {neuron_activation_75}\n'
+                          f'90_p: {neuron_activation_90}\n'
+                          f'max: {neuron_activation_max}')
+
+                self.neuron_activation = neuron_activation.detach().cpu()
+                #self.neuron_activation = self.neuron_activation.to('cpu')
+                #self.neuron_activation = self.neuron_activation.to('meta')
+                keep_neuron_p = self.neuron_keep_probability_func(self.iteration)
+                neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
+
+                if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
+                    if self.debug:
+                        print('############################')
+                        print(f'iteration: {self.iteration}')
+                        print(f'keep_neuron_p: {keep_neuron_p}')
+                        print(f'neuron_available_p: {neuron_available_p}')
+                        print(f'self.free_neuron_p: {self.free_neuron_p}')
+                        print(f'neuron_keep_probability: {self.neuron_keep_probability}')
+                        print(f'neuron_keep_steps: {self.neuron_keep_steps}')
+                        print(f'max_step_size: {self.max_step_size}')
+                        print('###################################################################')
+                        print('Somethinggg wrongg')
+                        print('###################################################################')
+                    num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
+                    num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
+                    num_neurons_to_kill = num_neurons_to_kill.astype('int')
+                    num_neurons_to_kill = int(num_neurons_to_kill)
+                    if num_neurons_to_kill > 0:
+                        neuron_activations_active = torch.mul(neuron_activation, neuron_mask)
+                        neuron_activations_active = neuron_activations_active.detach().cpu()
+                        maximum_value_temp = torch.max(neuron_activations_active) + 1
+                        neuron_activations_active[neuron_activations_active==0] = maximum_value_temp
+                        values, indices = torch.topk(neuron_activations_active, num_neurons_to_kill, largest=False)
+                        self.neuron_mask[indices] = 0
+                        neuron_mask[indices] = 0
+                        del neuron_activations_active, maximum_value_temp, values, indices
+                    del num_neurons_to_kill
+
+                del neuron_activation,  neuron_available_p, keep_neuron_p, mean_activations
+                torch.cuda.empty_cache()
+
+                self.iteration += 1
         x = torch.mul(x, neuron_mask.view(1, 1, -1))
         del neuron_mask
         x = self.down_proj(x)
