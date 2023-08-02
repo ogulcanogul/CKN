@@ -137,6 +137,9 @@ class CerebrateMLP(nn.Module):
             neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
 
             if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
+                print('###################################################################')
+                print('Somethinggg wrongg')
+                print('###################################################################')
                 num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
                 num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
                 num_neurons_to_kill = num_neurons_to_kill.astype('int')
