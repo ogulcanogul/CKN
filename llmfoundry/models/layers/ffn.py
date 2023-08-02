@@ -128,6 +128,7 @@ class CerebrateMLP(nn.Module):
                     print('###########################################')
                     del neuron_available_p
 
+
                 torch.cuda.empty_cache()
                 self.iteration += 1
                 del neuron_activations_active, neuron_activation
