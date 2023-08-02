@@ -121,8 +121,14 @@ class CerebrateMLP(nn.Module):
                     neuron_mask[neuron_activations_active<0.05] = 0
                     self.neuron_mask[neuron_activations_active<0.05] = 0
 
-                torch.cuda.empty_cache()
+                if (self.iteration%1000) == 0:
+                    neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
+                    print('##########################################')
+                    print(f'Neuron available p is {neuron_available_p}')
+                    print('###########################################')
+                    del neuron_available_p
 
+                torch.cuda.empty_cache()
                 self.iteration += 1
                 del neuron_activations_active, neuron_activation
 
