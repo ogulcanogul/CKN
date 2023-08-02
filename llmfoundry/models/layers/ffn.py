@@ -95,6 +95,7 @@ class CerebrateMLP(nn.Module):
         self.max_step_size = max_step_size
         self.neuron_keep_probability = neuron_keep_probability
         self.neuron_keep_steps = neuron_keep_steps
+        self.debug = False
 
     def forward(self, x):
         x = self.up_proj(x)
@@ -114,7 +115,7 @@ class CerebrateMLP(nn.Module):
             neuron_activation *= self.decay_weight_ma
             neuron_activation +=  ((1-self.decay_weight_ma) * mean_activations)
 
-            if self.iteration % 100 == 0:
+            if (self.iteration % 100 == 0) and self.debug:
                 neuron_activation_sorted, indices = torch.sort(neuron_activation)
                 neuron_activation_max = neuron_activation_sorted[-1]
                 neuron_activation_90 = neuron_activation_sorted[self.number_of_neurons*9//10]
@@ -131,7 +132,6 @@ class CerebrateMLP(nn.Module):
                       f'90_p: {neuron_activation_90}\n'
                       f'max: {neuron_activation_max}')
 
-            debug = False
             self.neuron_activation = neuron_activation.detach().cpu()
             #self.neuron_activation = self.neuron_activation.to('cpu')
             #self.neuron_activation = self.neuron_activation.to('meta')
@@ -139,7 +139,7 @@ class CerebrateMLP(nn.Module):
             neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
 
             if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
-                if debug:
+                if self.debug:
                     print('############################')
                     print(f'iteration: {self.iteration}')
                     print(f'keep_neuron_p: {keep_neuron_p}')
