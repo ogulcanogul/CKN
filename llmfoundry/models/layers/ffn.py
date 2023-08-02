@@ -92,6 +92,7 @@ class CerebrateMLP(nn.Module):
         self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=device)
         self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=device)
         self.decay_weight_ma = decay_weight_ma
+        self.max_step_size = max_step_size
 
     def forward(self, x):
         x = self.up_proj(x)
@@ -128,7 +129,7 @@ class CerebrateMLP(nn.Module):
                       f'90_p: {neuron_activation_90}\n'
                       f'max: {neuron_activation_max}')
 
-
+            debug = True
             self.neuron_activation = neuron_activation.detach().cpu()
             #self.neuron_activation = self.neuron_activation.to('cpu')
             #self.neuron_activation = self.neuron_activation.to('meta')
@@ -136,16 +137,18 @@ class CerebrateMLP(nn.Module):
             neuron_available_p = torch.sum(neuron_mask) / neuron_mask.size(dim=0)
 
             if keep_neuron_p < (neuron_available_p - self.free_neuron_p):
-                print('############################')
-                print(f'iteration: {self.iteration}')
-                print(f'keep_neuron_p: {keep_neuron_p}')
-                print(f'neuron_available_p: {neuron_available_p}')
-                print(f'self.neuron_p: {self.neuron_p}')
-                print(f'neuron_keep_probability: {self.neuron_keep_probability}')
-                print(f'neuron_keep_steps: {self.neuron_keep_steps}')
-                print('###################################################################')
-                print('Somethinggg wrongg')
-                print('###################################################################')
+                if debug:
+                    print('############################')
+                    print(f'iteration: {self.iteration}')
+                    print(f'keep_neuron_p: {keep_neuron_p}')
+                    print(f'neuron_available_p: {neuron_available_p}')
+                    print(f'self.neuron_p: {self.neuron_p}')
+                    print(f'neuron_keep_probability: {self.neuron_keep_probability}')
+                    print(f'neuron_keep_steps: {self.neuron_keep_steps}')
+                    print(f'max_step_size: {self.max_step_size}')
+                    print('###################################################################')
+                    print('Somethinggg wrongg')
+                    print('###################################################################')
                 num_neurons_to_kill = (neuron_available_p - keep_neuron_p) // self.free_neuron_p
                 num_neurons_to_kill = num_neurons_to_kill.cpu().numpy()
                 num_neurons_to_kill = num_neurons_to_kill.astype('int')
