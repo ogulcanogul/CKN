@@ -142,7 +142,7 @@ class CerebrateMLP(nn.Module):
                     print(f'iteration: {self.iteration}')
                     print(f'keep_neuron_p: {keep_neuron_p}')
                     print(f'neuron_available_p: {neuron_available_p}')
-                    print(f'self.neuron_p: {self.neuron_p}')
+                    print(f'self.neuron_p: {self.free_neuron_p}')
                     print(f'neuron_keep_probability: {self.neuron_keep_probability}')
                     print(f'neuron_keep_steps: {self.neuron_keep_steps}')
                     print(f'max_step_size: {self.max_step_size}')
