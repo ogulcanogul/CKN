@@ -83,12 +83,12 @@ class CerebrateMLP(nn.Module):
         self.number_of_neurons = expansion_ratio * d_model
         self.free_neuron_p = 1 / (expansion_ratio * d_model)
         neuron_keep_probability_func = lambda step: \
-            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size)
+            neuron_keep_probability + (1 - neuron_keep_probability) / math.exp(5 * step / max_step_size)
         p_tohold = 1 - neuron_keep_probability_func(neuron_keep_steps)
         self.neuron_keep_probability_func = lambda step: \
             min(1, p_tohold - (p_tohold * max(0,
             (step-neuron_keep_steps)/(max_step_size-neuron_keep_steps)))+\
-            neuron_keep_probability + neuron_keep_probability / math.exp(5 * step / max_step_size))
+            neuron_keep_probability + (1 - neuron_keep_probability) / math.exp(5 * step / max_step_size))
         self.neuron_activation = torch.zeros(expansion_ratio * d_model, device=device)
         self.neuron_mask = torch.ones(expansion_ratio * d_model,  device=device)
         self.decay_weight_ma = decay_weight_ma
@@ -131,7 +131,7 @@ class CerebrateMLP(nn.Module):
                       f'90_p: {neuron_activation_90}\n'
                       f'max: {neuron_activation_max}')
 
-            debug = True
+            debug = False
             self.neuron_activation = neuron_activation.detach().cpu()
             #self.neuron_activation = self.neuron_activation.to('cpu')
             #self.neuron_activation = self.neuron_activation.to('meta')
