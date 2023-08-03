@@ -118,7 +118,7 @@ class CerebrateMLP(nn.Module):
                 self.neuron_activation = neuron_activation.detach().cpu()
                 if self.iteration > self.neuron_keep_steps:
                     neuron_activations_active = torch.mul(neuron_activation, neuron_mask)
-                    neuron_mask[neuron_activations_active<0.1] = 0
+                    neuron_mask[neuron_activations_active<0.05] = 0
                     self.neuron_mask[neuron_activations_active<0.05] = 0
                     del neuron_activations_active
 
