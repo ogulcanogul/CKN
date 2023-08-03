@@ -220,7 +220,7 @@ def build_ffn(
     neuron_keep_steps: int = 2000,
     **kwargs,
 ):
-    ffn_type = 'cerebrate_mlp'
+    ffn_type = 'mptmlp'
     if ffn_type == 'mptmlp':
         if kwargs is not None and len(kwargs) > 0:
             raise ValueError(
