@@ -109,12 +109,18 @@ class MPTModel(MPTPreTrainedModel):
                                           config.d_model,
                                           device=config.init_device)
         self.emb_drop = nn.Dropout(config.emb_pdrop)
-        self.blocks = nn.ModuleList([
-            MPTBlock(
+        print(f'Number of repetitive layer blocks: {config.n_rep}')
+        n_layers = config.n_layers // config.n_rep
+        h_ = [MPTBlock(
                 device=config.init_device,
                 **config.to_dict(),
-            ) for _ in range(config.n_layers)
-        ])
+            ) for _ in range(n_layers)]
+        h = []
+        for _ in range(config.n_rep):
+            h.extend(h_)
+
+
+        self.blocks = nn.ModuleList(h)
         self.norm_f = norm_class(config.d_model, device=config.init_device)
 
         if config.init_device != 'meta':

@@ -237,17 +237,17 @@ def build_ffn(
             ffn_hidden_size=d_model * expansion_ratio,
             **kwargs,
         )
-    elif ffn_type == 'cerebrate_mlp':
-        return CerebrateMLP(
-            d_model=d_model,
-            expansion_ratio=expansion_ratio,
-            fc_type=fc_type,
-            device=device,
-            decay_weight_ma=decay_weight_ma,
-            neuron_keep_probability=neuron_keep_probability,
-            neuron_keep_steps=neuron_keep_steps,
-            max_step_size=max_step_size,
-        )
+    # elif ffn_type == 'cerebrate_mlp':
+    #     return CerebrateMLP(
+    #         d_model=d_model,
+    #         expansion_ratio=expansion_ratio,
+    #         fc_type=fc_type,
+    #         device=device,
+    #         decay_weight_ma=decay_weight_ma,
+    #         neuron_keep_probability=neuron_keep_probability,
+    #         neuron_keep_steps=neuron_keep_steps,
+    #         max_step_size=max_step_size,
+    #     )
 
     else:
         raise ValueError(f'{ffn_type=} not recognized.')
